@@ -1,0 +1,16 @@
+---
+  - hosts:  pg-std01
+    gather_facts: no
+    become: true
+    tasks:
+      - name: stop service
+        ansible.builtin.service:
+          name: postgresql
+          state: stopped
+      - name: Take full backup
+        become_user: postgres
+        shell:  pgbackrest --stanza=main --delta --type=standby restore
+      - name: stop service
+        ansible.builtin.service:
+          name: postgresql
+          state: started

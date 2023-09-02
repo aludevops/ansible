@@ -1,0 +1,8 @@
+---
+- hosts: dbpgbackrest
+  become: true
+  tasks:
+    - name: no force copy src.txt as dest.txt in the same dir 
+      copy:
+        src: /tmp/pgbackrest-ansible-main.zip
+        dest: /tmp/

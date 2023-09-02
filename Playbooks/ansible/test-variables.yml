@@ -1,0 +1,11 @@
+- name: Test variables
+  hosts: all
+  become: yes
+
+  vars_files:
+    - vars/varsfiles.yml
+
+  tasks:
+    - name: Show my variable
+      debug:
+        msg: "ma variable {{ postgresql_data_dir }}"

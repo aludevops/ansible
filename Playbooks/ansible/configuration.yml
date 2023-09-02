@@ -1,0 +1,64 @@
+---
+  - hosts: databases
+    gather_facts: no
+    become: true
+    vars_files:
+    - vars/varsfiles.yml
+    tasks:
+      - name: Configure archive settings
+        lineinfile:
+              dest: /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf
+              regexp: "^{{ item.regexp }}"
+              line: "{{ item.line}}"
+        with_items:
+          - { regexp: "^#?listen_addresses =", line: "listen_addresses = '*'" }
+          - { regexp: "^#?archive_command =", line: "archive_command = 'pgbackrest --stanza=main archive-push %p'" }
+          - { regexp: "^#?archive_mode =", line: "archive_mode = on" }
+          - { regexp: "^#?log_line_prefix =", line: "log_line_prefix = ''" }
+          - { regexp: "^#?max_wal_senders =", line: "max_wal_senders = 3" }
+          - { regexp: "^#?wal_level =", line: "wal_level = replica" }
+        notify: Re-Start PostgreSQL
+      - lineinfile:
+              dest: /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf
+              regexp: "^{{ item.regexp }}"
+              line: "{{ item.line}}"
+        with_items:
+          - { regexp: "^#?hot_standby =", line: "hot_standby = on" }
+          - { regexp: "^#?log_filename =", line: "log_filename = 'postgresql.log'" }
+        delegate_to: pg-std01
+        notify: Re-Start PostgreSQL
+
+      - name: Configure pgBackRest
+        copy:
+          dest:  /etc/pgbackrest/pgbackrest.conf
+          content: "{{ lookup('file', './configuration/databases/pgbackrest.conf') }}"
+    handlers:
+      - name: Re-Start PostgreSQL
+        shell: pg_ctlcluster {{ postgresql_version }} main restart
+
+  - hosts: pg-repo01
+    gather_facts: no
+    become_user: root
+    tasks:
+      - name: Configure pgBackRest
+        copy:
+          dest:  /etc/pgbackrest/pgbackrest.conf
+          content: "{{ lookup('file', './configuration/repository/pgbackrest.conf') }}"
+      - name: Create the stanza
+        become_user: pgbackrest
+        command: pgbackrest --stanza=main stanza-create
+        notify: Check the configuration for {{ item }}
+        loop:
+          - databases
+          - repository
+    handlers:
+      - name: Check the configuration for databases
+        become_user: postgres
+        shell: pgbackrest --stanza=main check
+        delegate_to: '{{ item }}'
+        loop:
+          - pg-prim01 
+          - pg-std01
+      - name: Check the configuration for repository
+        become_user: pgbackrest
+        shell: pgbackrest --stanza=main check

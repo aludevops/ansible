@@ -1,0 +1,8 @@
+---
+- hosts: all
+  become: true
+  tasks:
+   - name: transfert du dump
+      copy:
+        src: "{{ rep_files }}/pgbackrest-release-2.30/src/pgbackrest"
+        dest: "/tmp/"

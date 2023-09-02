@@ -1,0 +1,31 @@
+---
+  - hosts: repository
+    gather_facts: no
+    become: true
+    tasks:
+      - name: Take full backup
+        become_user: pgbackrest
+        shell:  pgbackrest --stanza=main  --type=full  backup  
+        register: backup_info
+        when: type == 'full'
+        notify: '{{ item }}'
+        with_items:
+          - Get backup info for the main cluster
+          - debug
+      - debug: msg='{{ backup_info }}'
+      - name: Take incremental backup
+        become_user: pgbackrest
+        shell: pgbackrest --stanza=main --type=incr backup
+        register: backup_info
+        when: type == 'incr'
+        notify: '{{ item }}'
+        with_items:
+          - Get backup info for the main cluster
+          - debug
+      - debug: msg='{{ backup_info }}'
+    handlers:
+      - name: Get backup info for the main cluster
+        shell: pgbackrest info
+        register: pgbackrest_info
+      - name: debug
+        debug: msg='{{ pgbackrest_info.stdout}}'

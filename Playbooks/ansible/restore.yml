@@ -1,0 +1,14 @@
+---
+  - hosts:  repository
+    gather_facts: no
+    become: true
+    tasks:
+      - name: Stop the main cluster
+        shell: pg_ctlcluster 13 main stop
+        become_user: postgres
+      - name: Perform delta restore
+        shell: pgbackrest --stanza=main --delta restore
+        notify: Restart PostgreSQL
+    handlers:
+      - name: Restart PostgreSQL
+        shell: pg_ctlcluster 13 main start

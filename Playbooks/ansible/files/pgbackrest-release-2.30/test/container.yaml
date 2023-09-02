@@ -1,0 +1,24 @@
+# **********************************************************************************************************************************
+# Container Cache
+#
+# Contains hashes for containers that are available on Docker hub.  If present, the container can be pulled instead of being built
+# locally which saves a lot of time.  Note: these are hashes of the Dockerfile not the actual binary image.
+#
+# To build a new image:
+# - if Dockerfile has changed, just build as usual
+# - if Dockerfile has not changed, comment out vm hash below and use --vm-force when building
+#
+# To upload a new image:
+# - docker login -u pgbackrest
+# - VM=XXX;DATE=YYYYMMDDX;BASE=pgbackrest/test:${VM?}-base;docker tag ${BASE?} ${BASE?}-${DATE?} && docker push ${BASE?}-${DATE?}
+# **********************************************************************************************************************************
+20200924A:
+  co6: 111ea274130b051c4b82c16170eed997a9dc5d20
+  co7: ee58b885ad2463d60031511de0a297aa93c02068
+  u18: d95d53e642fc1cea4a2b8e935ea7d9739f7d1c46
+
+20200507A:
+  f32: 61792779061d2a675509c65bfa64b61b8d4cea17
+
+20200505A:
+  u12: 8a88ab44aace049d7da5ca1094375ff8b9aeb7ab

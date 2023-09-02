@@ -1,0 +1,6 @@
+[databases]
+pg-primary
+pg-standby
+
+[repository]
+repository 

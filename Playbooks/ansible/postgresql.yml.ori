@@ -1,0 +1,67 @@
+---
+- hosts: debi-bdd
+  become: yes
+
+  vars_files:
+    - vars.yml
+
+  pre_tasks:
+    - name: install dnf
+      apt: 
+        name: dnf
+        state: present
+    - name: "Install packages"
+      dnf: "name={{ item }} state=present"
+      with_items: ['postgresql','postgresql-server']
+    - name: "Install Python package"
+      pip: "name={{ item }} state=present"
+      with_items:
+        - python3-psycopg2
+        - psycop2-binary
+  tasks:
+    - name: "Find out if PostgreSQL is initialized"
+      ansible.builtin.stat: 
+        path: "/var/lib/pgsql/data/pg_hba.conf"
+      register: postgres_data
+    - name: "Initialized PostgreSQL"
+      shell: "postgresql-setup initdb"
+      when: not postgre_data.stat.exists
+ 
+    - name: "start and enable service"
+      service: "name={{ item }} state=started enabled=yes"
+      with_items:
+        - postgresql
+  tasks:
+    - name: "create app database"
+      postgresql_db:
+        state: present
+        name: "{{ db_name }}"
+      become: yes
+      become_user: postgres
+     
+    - name: "create bd user database"
+      postgresql_user:
+        state: present
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+      become: yes
+      become_user: postgres
+    - name: "Allow md5 connection for db user"
+      postgresql_pg_hba:
+        dest: "~/data/pg_hba.conf"
+        contype: host
+        databases: all
+        method: md5
+        users: "{{ db_user }}"
+        create: true
+      become: yes
+      become_user: postgres
+      notify: restart postgres
+    - name: "Add some dummy data to our database"
+      become: true
+      become_user: postgres
+      shell: psql {{db_name }} </tmp/dump.sql
+     
+  handlers:
+    - name: restart postgres
+      service: name=postgresql state=restarted

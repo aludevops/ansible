@@ -1,0 +1,76 @@
+---
+- hosts: bdd
+  become: true
+  vars_files:
+    - vars/varsfiles.yml 
+  pre_tasks:
+    - name: "Install packages"
+      ansible.builtin.apt:
+        name: 
+          - postgresql-{{ postgresql_version }}
+          - postgresql-contrib
+          - libpq-dev
+          - pip
+          - python3-psycopg2
+        state: present
+  tasks:
+    - name: Check if PostgreSQL is initialized
+      ansible.builtin.stat:
+        path: "{{ postgresql_data_dir }}/pg_hba.conf"
+      register: postgres_data
+
+    - name: Empty data dir
+      ansible.builtin.file:
+        path: "{{ postgresql_data_dir }}"
+        state: absent
+      when: not postgres_data.stat.exists
+
+    - name: Initialize PostgreSQL
+      ansible.builtin.shell: "{{ postgresql_bin_path }}/initdb -D {{ postgresql_data_dir }}"
+      become: true
+      become_user: postgres
+      when: not postgres_data.stat.exists
+
+    - name: Start and enable service
+      ansible.builtin.service:
+        name: postgresql
+        state: started
+        enabled: true
+  tasks:
+    - name: "create app database"
+      postgresql_db:
+        state: present
+        name: "{{ db_name }}"
+      become: yes
+      become_user: postgres
+     
+    - name: "create bd user database"
+      postgresql_user:
+        state: present
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+      become: yes
+      become_user: postgres
+    - name: "Allow md5 connection for db user"
+      postgresql_pg_hba:
+        dest: "{{ postgresql_data_dir }}/pg_hba.conf"
+        contype: host
+        databases: all
+        method: md5
+        users: "{{ db_user }}"
+        create: true
+      become: yes
+      become_user: postgres
+      notify: restart postgres
+    - name: transfert du dump
+      copy:
+        src: "{{ rep_files }}/dump.sql"
+        dest: "/tmp/"
+    - name: "Add some dummy data to our database"
+      become: true
+      become_user: postgres
+      shell: psql {{db_name }} < /tmp/dump.sql
+     
+  handlers:
+    - name: restart postgres
+      service: name=postgresql state=restarted

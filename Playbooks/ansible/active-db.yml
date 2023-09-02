@@ -1,0 +1,10 @@
+---
+  - hosts:  pg-std01
+    gather_facts: no
+    become: true
+    tasks:
+      - name: Take full backup
+        become_user: postgres
+        community.postgresql.postgresql_query:
+          db: postgres
+          query: SELECT pg_promote()

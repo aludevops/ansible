@@ -1,0 +1,32 @@
+---
+- hosts: bdd
+  become: yes
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        upgrade: 'yes'
+        update_cache: yes 
+        cache_valid_time: 86400
+    - name: install package
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items: ['acl','gpg','curl','apt-transport-https','lsb-release','wget','ca-certificates','gnupg']
+    - name: delete file if present
+      file:
+        state: absent
+        path: "/usr/share/keyrings/postgresql-keyring.gpg"
+   
+    - name: update repository
+      shell: 'curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg'
+    - name: command
+      command: sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+    - name: add repository 
+      apt_key:
+        url: "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+        state: present
+    - name: Update and upgrade apt packages
+      apt:
+        upgrade: 'yes'
+        update_cache: yes 
+        cache_valid_time: 86400

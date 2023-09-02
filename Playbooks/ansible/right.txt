@@ -1,0 +1,7 @@
+      - name: right of file
+        become_user: pgbackrest
+        file:
+          path: /etc/pgbackrest/pgbackrest.conf
+          state: file
+          group: pgbackrest
+          owner: pgbackrest 

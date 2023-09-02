@@ -1,0 +1,12 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: suppression package postegresl
+      apt:
+        name: postgresql
+        state: absent
+    - name: purge 
+      command: sudo apt-get --purge remove postgresql
+    - name: suppression des répertoires
+      command: sudo rm -rf {/var/{lib,log},etc}/postgresql/

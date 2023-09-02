@@ -3,7 +3,7 @@
     gather_facts: no
     become: true
     tasks:
-      - name: Take full backup
+      - name: Take full backup important
         become_user: pgbackrest
         shell:  pgbackrest --stanza=main  --type=full  backup  
         register: backup_info

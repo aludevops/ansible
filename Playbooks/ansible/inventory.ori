@@ -4,3 +4,6 @@ pg-standby
 
 [repository]
 repository 
+
+[test]
+
